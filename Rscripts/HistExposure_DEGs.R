@@ -204,7 +204,7 @@ quantLog.b <- log2(fpm(dds.blast)[isexpr, ] + 1)
 # Check sample names alignment
 all(colnames(quantLog.b) == rownames(metadata.blast))  #should be true!!
 
-form.b <- ~ Treatment + Population +Experiment
+form.b <- ~ Treatment + urban
 varPartb <- fitExtractVarPartModel(quantLog.b, form.b, metadata.blast)
 
 vpb <- sortCols(varPartb)
@@ -214,11 +214,11 @@ plotVarPart(vpb)
 
 ####PCAS####
 pcaData_blast<-
-  plotPCA(vsd.blast, intgroup=c("Treatment", "Population", "urban", "Experiment"),  pcsToUse=1:2, returnData=TRUE) #using ntop=500 top features by variance
+  plotPCA(vsd.blast, intgroup=c("Treatment", "Population", "urban", "Experiment"),  pcsToUse=5:6, returnData=TRUE) #using ntop=500 top features by variance
 percentVar <- round(100 * attr(pcaData_blast, "percentVar"))
 
 
-ggplot(pcaData_blast, aes(x=PC1, y=PC2, shape=Experiment, color=urban)) +
+ggplot(pcaData_blast, aes(x=PC5, y=PC6, shape=Experiment, color=urban)) +
   geom_point(size=4) +
   #stat_ellipse(aes(x = PC1,y=PC2,color=factor(Experiment))) +
   #facet_wrap(~Population)+
@@ -231,7 +231,7 @@ ggplot(pcaData_blast, aes(x=PC1, y=PC2, shape=Experiment, color=urban)) +
 #linear models
 ##PC5 sig by population (and pop MP) AND experiment
 ## PC1 sig by experiment...
-blast1<-lm(PC1~Population+Treatment+Experiment, data=pcaData_blast) 
+blast1<-lm(PC5~Population+Treatment+Experiment, data=pcaData_blast) 
 anova(blast1)
 
 
@@ -271,7 +271,7 @@ resultsNames(hist.gast) #populations compared & treatment vs control compared
 
 
 #filter by padj=0.05 and then extract logfoldchange
-resgast<-results(hist.gast, (c(contrast="urban", "urban", "nonurban")) ) #gives readout of padj, log2FoldChange and other stuff
+resgast<-results(hist.gast, (c(contrast="Treatment", "C", "NP")) ) #gives readout of padj, log2FoldChange and other stuff
 summary(resgast)
 resgast
 
@@ -319,11 +319,13 @@ annot_colors=list(
   Population=c("Cab"="#5C5649", "Wh"="#A69C8B", "Trp"="#0F6DD2", "Twp"="#99D1EC"),
   Treatment=c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
-pheatmap(gast_ordered_matrix, cluster_rows=TRUE, show_rownames=FALSE,
+gast.heat.urb<-pheatmap(gast_ordered_matrix, cluster_rows=TRUE, show_rownames=FALSE,
          cluster_cols=FALSE, annotation_col=df.g.ordered, 
          annotation_colors=annot_colors,
          scale="row",
          color = magma(100))
+
+ggsave("gastrulaheatmap.png",gast.heat.urb, width=30, height=15, units = "cm") 
 
 ##Varpar####
 # identify genes that pass expression cutoff
@@ -331,7 +333,7 @@ G <- rowSums(fpm(dds.gast) > 1) >= 0.5 * ncol(dds.blast)
 
 quantLog.g <- log2(fpm(dds.gast)[G, ] + 1)
 
-form.g <- ~ Treatment + Population +Experiment
+form.g <- ~ Treatment + urban
 varPartg <- fitExtractVarPartModel(quantLog.g, form.g, metadata.gast)
 
 vpg <- sortCols(varPartg)
@@ -339,22 +341,38 @@ vpg <- sortCols(varPartg)
 plotVarPart(vpg)
 ### PCAS####
 pcaData_gast<-
-  plotPCA(vsd.gast, intgroup=c("Treatment", "Population", "urban", "Pop_MP", "Experiment"),  pcsToUse=5:6, returnData=TRUE) #using ntop=500 top features by variance
+  plotPCA(vsd.gast, intgroup=c("Treatment", "Population", "urban", "Pop_MP", "Experiment"),  pcsToUse=1:2, returnData=TRUE) #using ntop=500 top features by variance
 percentVar <- round(100 * attr(pcaData_gast, "percentVar"))
 
 
-ggplot(pcaData_gast, aes(x=PC5, y=PC6,  shape=Treatment, color=Population)) +
+gast.pc2<-
+  ggplot(pcaData_gast, aes(x=PC1, y=PC2, color=Treatment)) +
   geom_point(size=4) +
-  #stat_ellipse() +
-  facet_wrap(~Experiment)+
+  stat_ellipse(aes(x = PC1, y=PC2, color=factor(Treatment))) +
+ # facet_wrap(~Experiment)+
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
-  labs(title= "Gastrula")+
-  scale_color_brewer(palette="Set2")+
+  labs(title= "A. Gastrula")+
+  scale_color_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))+
   theme(legend.position="right") + theme_box()
 
+ggsave("gastpc2.png",gast.pc2, width=20, height=15, units = "cm") 
+
+gast.pc5<-
+  ggplot(pcaData_gast, aes(x=PC5, y=PC6, color=Treatment)) +
+  geom_point(size=4) +
+  stat_ellipse(aes(x = PC5, y=PC6, color=factor(Treatment))) +
+  # facet_wrap(~Experiment)+
+  xlab(paste0("PC5: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC6: ",percentVar[2],"% variance")) + 
+  labs(title= "B. Gastrula")+
+  scale_color_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))+
+  theme(legend.position="right") + theme_box()
+
+ggsave("gastpc5.png",gast.pc5, width=20, height=15, units = "cm")
+
 #linear models
-gast1<-lm(PC5~Population+Treatment+Experiment, data=pcaData_gast) 
+gast1<-lm(PC2~urban+Treatment+Experiment, data=pcaData_gast) 
 anova(gast1)
 
 ####3. Pluteus####
@@ -462,14 +480,14 @@ P <- rowSums(fpm(dds.plut) > 1) >= 0.5 * ncol(dds.plut)
 
 quantLog.p <- log2(fpm(dds.plut)[P, ] + 1)
 
-form.p <- ~ Treatment + urban +Experiment
+form.p <- ~ Treatment + urban 
 varPartp <- fitExtractVarPartModel(quantLog.p, form.p, metadata.plut)
 
 vp <- sortCols(varPartp)
 # violin plot of contribution of each variable to total variance
 plotVarPart(vp)
 
-plotPercentBars(vp[1:5, ], colors=my_colors)
+plotPercentBars(vp[1:20, ], colors=my_colors)
 
 ### PCAS####
 
@@ -479,16 +497,18 @@ percentVar <- round(100 * attr(pcaData_plut, "percentVar"))
 
 
 
-ggplot(pcaData_plut, aes(x=PC3, y=PC4, shape=urban, color=Treatment)) +
+plut.pc<-ggplot(pcaData_plut, aes(x=PC3, y=PC4, shape=urban, color=Treatment)) +
   geom_point(size=4) +
   stat_ellipse(aes(x = PC3,y=PC4, lty=factor(urban),color=factor(Treatment))) +
   #facet_wrap(~Population)+
   xlab(paste0("PC3: ",percentVar[1],"% variance")) +
   ylab(paste0("PC4: ",percentVar[2],"% variance")) + 
   labs(title= "Pluteus")+
-  scale_color_brewer(palette="Set2")+
+  scale_color_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))+
   theme(legend.position="right") + theme_box()
 
+ggsave("pcaplut.png",plut.pc, width=20, height=15, units = "cm") 
+
 #linear models
-plut1<-lm(PC6~Population+Treatment+Experiment, data=pcaData_plut) 
+plut1<-lm(PC3~urban+Treatment+Experiment, data=pcaData_plut) 
 anova(plut1)

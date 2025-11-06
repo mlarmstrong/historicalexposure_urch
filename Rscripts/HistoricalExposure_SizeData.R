@@ -21,7 +21,7 @@ theme_box <- function(base_size = 11, base_family = '') {
 ###BLASTULA####
 #Import the blastula measurements, select and rename useful columns, and
 #add a column for experiments 1 and 2
-Bsize<-read.csv("2024_WBML/HE_Blastula_measurements.csv") 
+Bsize<-read.csv("HE_Blastula_measurements.csv") 
 #view(Bsize)
 Bsize<- Bsize %>% 
   group_by(BeakerID, Population, MatePair, Treatment, Experiment, Urban) %>% 
@@ -53,7 +53,7 @@ Bsize$Population=factor(Bsize$Population,levels=c("Urban, Cabrillo Beach", "Urba
 bigbois<-
 ggplot(Bsize, aes(x=Population, y=size, fill=Treatment)) +
     geom_boxplot()+ theme_classic()+
-    labs(title = 'Blastula Size', x = 'Population', y = 'Blastula Size (nm)')+
+    labs(title = 'A. Blastula', x = 'Population', y = 'Blastula Size (nm)')+
     scale_fill_brewer(palette = "PRGn")
   
 #ggsave("blast_size.png",bigbois, width=32, height=15, units = "cm") 
@@ -70,10 +70,10 @@ subsetbois<-
 ggplot(Bsize.sub, aes(x=Urban, y=size, fill=Treatment)) +
   geom_boxplot()+ theme_box()+
   #facet_wrap("Experiment")+
-  labs(title = 'Blastula Size (subset)', x = 'Population', y = 'Blastula Size (nm)')+
+  labs(title = 'A. Blastula', x = 'subset', y = 'Blastula Size (mm)')+
   scale_fill_manual(values=treat.colors)
 
-ggsave("subblast_size.png",subsetbois, width=15, height=10, units = "cm")
+ggsave("subblast_size.png",subsetbois, width=20, height=15, units = "cm")
 
 Bsize_means <- Bsize %>%
   group_by(Urban) %>%
@@ -126,18 +126,18 @@ Gsize.sub1<- Gsize %>%
 heightplot<-
 ggplot(Gsize.sub1, aes(x=Urban, y=Height_mm, fill=Treatment)) +
   geom_boxplot()+ theme_box()+
-  labs(title = 'Gastrula Height (mm)', x = 'Population', y = 'Gastrula Height (mm)')+
+  labs(title = 'B. Gastrula', x = '', y = 'Gastrula Height (mm)')+
   scale_fill_manual(values=treat.colors)
 
 stomachplot<-
 ggplot(Gsize.sub1, aes(x=Urban, y=Stomach_Length_mm, fill=Treatment)) +
   geom_boxplot()+ theme_box()+
-  labs(title = 'Gastrula Stomach Length (mm)', x = 'Population', y = 'Gastrula Stomach Length (mm)')+
+  labs(title = 'A. Gastrula', x = '', y = 'Gastrula Stomach Length (mm)')+
   scale_fill_manual(values=treat.colors)
 
 #save plots as pictures
-ggsave("gast_size.png",heightplot, width=20, height=11, units = "cm")
-ggsave("gast_stomach.png",stomachplot, width=20, height=11, units = "cm") 
+ggsave("gast_size.png",heightplot, width=20, height=15, units = "cm")
+ggsave("gast_stomach.png",stomachplot, width=20, height=15, units = "cm") 
 
 #test for size variation with treatment, blocking by population
 Gh<-lmer(Height_mm~Treatment*Urban + (1|Experiment), data=Gsize.sub1) 
@@ -199,33 +199,25 @@ Psize$Population<- factor(x=Psize$Population, labels=c(
 Psize$Population=factor(Psize$Population,levels=c("Urban, Cabrillo Beach", "Urban, White Pt", "Nonurban, Treasure Park", "Nonurban, Twin Pts"))
 
 #Box plots-Body Length
-ggplot(Psize, aes(x=Population, y=BL_mm, fill=Treatment)) +
+
+sizeplut<-
+ggplot(Psize, aes(x=Urban, y=BL_mm, fill=Treatment)) +
   geom_boxplot()+ theme_box()+
-  labs(title = 'Body Length (mm)', x = 'Population', y = 'Pluteus Body Length (mm)')+
+  labs(title = 'C. Pluteus', x = '', y = 'Pluteus Body Length (mm)')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
-
-sizeplut<-ggplot(Psize, aes(x=Urban, y=BL_mm, fill=Treatment)) +
-  geom_boxplot()+ theme_box()+
-  labs(title = 'Body Length (mm)', x = 'Urbanization', y = 'Pluteus Body Length (mm)')+
-  scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
-
-ggsave("plut_sizeurban.png",sizeplut, width=20, height=11, units = "cm")
+ggsave("plut_sizeurban.png",sizeplut, width=20, height=15, units = "cm")
 
 #average arm lengths
 Psize <- Psize %>% 
   mutate(avg_AL=((AL1_mm + AL2_mm)/2))
 
 #Box plots-Arm Length
-ggplot(Psize, aes(x=Population, y=avg_AL, fill=Treatment)) +
+armplut<-ggplot(Psize, aes(x=Urban, y=avg_AL, fill=Treatment)) +
   geom_boxplot()+ theme_box()+
-  labs(title = 'Arm Length (mm)', x = 'Population', y = 'Pluteus Arm Length (mm)')+
+  labs(title = 'C. Pluteus', x = '', y = 'Pluteus Arm Length (mm)')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
-
-ggplot(Psize, aes(x=Urban, y=avg_AL, fill=Treatment)) +
-  geom_boxplot()+ theme_box()+
-  labs(title = 'Arm Length (mm)', x = 'Urbanization', y = 'Pluteus Arm Length (mm)')+
-  scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
+ggsave("plut_armlenghturban.png",armplut, width=20, height=15, units = "cm")
 
 pbl_u<-lmer(BL_mm~Treatment*Population + (1|Experiment), data=Psize) 
 anova(pbl_u)

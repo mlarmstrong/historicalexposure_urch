@@ -121,6 +121,49 @@ plut.genes <- plut.genes %>%
 
 #write.csv(plut.genes,"RNA_data/HE.plut.results.sig.urbtreat.full.genes.csv")
 
+##OVERLAP WITH POPGEN####
+# import LA_GOTerms_copy.csv
+LA.outliers<-read.csv("RNA_data/LA_GOTerms_copy.csv")
+LA.outliers$Transcripts.accession<- sub("\\..*", "", LA.outliers$Transcripts.accession) #get rid of version
+
+#overlap with blast.genes
+over_b <- intersect(blast.genes$X, LA.outliers$Transcripts.accession)
+print(over_b) #XM_030989333
+
+#overlap with gast.genes
+over_g <- intersect(LA.outliers$Transcripts.accession, gast.genes$X)
+print(over_g) #16 genes!!
+
+#overlap with plut.genes
+over_p <- intersect(LA.outliers$Transcripts.accession, plut.genes$X)
+print(over_p)#73 genes!!
+
+#save all overlaps into a data table
+all_overlap <- unique(c(over_b, over_g, over_p))
+
+# Create dataframe with logical indicators
+overlapping_genes_popgen <- data.frame(
+  Gene = all_overlap,
+  In_B = all_overlap %in% over_b,
+  In_G = all_overlap %in% over_g,
+  In_P = all_overlap %in% over_p
+)
+
+LA.outliers_unique <- LA.outliers[!duplicated(LA.outliers$Transcripts.accession), ]
+##add popgen gene column info
+overlapping_genes_popgen <- merge(
+  overlapping_genes_popgen,
+  LA.outliers_unique[, c("Transcripts.accession","Transcript.name")], 
+  by.x = "Gene",
+  by.y = "Transcripts.accession",
+  all.x = TRUE
+)
+dim(overlapping_genes_popgen) #got rid of duplicates
+
+#write.csv(overlapping_genes_popgen,"RNA_data/HE_overlapping.genes.csv")
+
+###stop ##
+
 #compare datasets
 shared.genes.poptreat <- blast.genes %>%
   inner_join(gast.genes, by = "X") %>%

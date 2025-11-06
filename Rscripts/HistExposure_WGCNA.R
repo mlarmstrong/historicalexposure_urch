@@ -18,6 +18,12 @@ library(dplyr)
 library(DESeq2)
 library(tibble)
 
+#figure theme to keep things consistent
+theme_box <- function(base_size = 11, base_family = '') {
+  theme_classic() %+replace% 
+    theme(text = element_text(size = 20),  fill = NA, size = 1)
+}
+
 
 ##Read in Metadata####
 metadata <- read.table(file.path("HE_RNAdata/RNAhist_metadata.txt"), header=TRUE)
@@ -119,7 +125,7 @@ plotDendroAndColors(
   dendroLabels = FALSE,
   hang = 0.03,
   addGuide = TRUE,
-  guideHang = 0.05 )
+  guideHang = 0.05)
 
 #pull out list
 module_df.blast <- data.frame(
@@ -131,6 +137,8 @@ write_delim(module_df.blast,
             file = "blast.WGCNA.gene_modules.txt",
             delim = "\t") #all 34,000 genes and what module they correlate to
 
+sort(table(module_df.blast$colors), decreasing = TRUE)
+unique(module_df.blast$colors)
 ####eigengenes####
 # Get Module Eigengenes per cluster
 MEs0.blast <- moduleEigengenes(vsd.blast.flip, mergedColors.blast)$eigengenes
@@ -141,7 +149,6 @@ module_order.blast = names(MEs0.blast) %>% gsub("ME","", .)
 
 # Add sample names
 MEs0.blast$treatment = row.names(MEs0.blast)
-
 
 # tidy & plot data
 mME.blast = MEs0.blast %>%
@@ -162,7 +169,6 @@ metadata.blast <- metadata.blast %>%
 mME.blast.joined <- mME.blast %>%
   left_join(metadata.blast, by = c("treatment" = "Library")) %>% 
   rename("treatment"="indiv")
-
 
 #binarize variables of interest
 metadata.blast.np<-metadata.blast %>% 
@@ -207,16 +213,28 @@ ggplot(mME.blast.joined.brown, aes(x=urban, y=value, fill=Treatment))+
 mME.blast.joined.yg <-mME.blast.joined %>% 
   subset(mME.blast.joined$name=="yellowgreen")
 
-WGCNA_yg<-ggplot(mME.blast.joined.yg, aes(x=urban, y=value, fill=Treatment))+
+ggplot(mME.blast.joined.yg, aes(x=urban, y=value, fill=Treatment))+
   geom_boxplot()+ theme_box()+
   labs(title = 'Blastula', x = 'Population', y = 'eigenvalues of yellowgreen module')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
-ggsave("WGCNA_blastula_yg.png",WGCNA_yg, width=20, height=15, units = "cm") 
-
 yg<-lmer(value~Treatment*urban + (1|Experiment), data=mME.blast.joined.yg) 
 anova(yg) 
 
+##accounting for experiment by plotting the residuals
+yg.exp<-lmer(value~(1|Experiment), data=mME.blast.joined.yg) 
+res.yg.blast<-resid(yg.exp)
+mME.blast.joined.yg<-cbind(mME.blast.joined.yg, res.yg.blast)
+
+#replot data
+WGCNA_yg<-
+  ggplot(mME.blast.joined.yg, aes(x=urban, y=res.yg.blast, fill=Treatment))+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'A. Blastula', x = 'YellowGreen', y = 'eigenvalues of module A (exp-controlled)')+
+  scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
+
+ggsave("WGCNA_blastula_yg.png",WGCNA_yg, width=20, height=15, units = "cm") 
+  
 ##line graphs#
 # pick out a few modules of interest here--not a lot of overlap but let's try darkorange
 modules_of_interest = ("blue")
@@ -368,6 +386,9 @@ write_delim(module_df.gast,
             file = "gast.WGCNA.gene_modules.txt",
             delim = "\t") #all 34,000 genes and what module they correlate to
 
+sort(table(module_df.gast$colors), decreasing = TRUE)
+unique(module_df.gast$colors)
+
 ####eigengenes####
 # Get Module Eigengenes per cluster
 MEs0.gast <- moduleEigengenes(vsd.gast.flip, mergedColors.gast)$eigengenes
@@ -436,24 +457,37 @@ mME.gast.joined.cyan <-mME.gast.joined %>%
   subset(mME.gast.joined$name=="cyan")
 
 ggplot(mME.gast.joined.cyan, aes(x=urban, y=value, fill=Treatment))+
-  geom_boxplot()+ theme_classic()+
-  labs(title = 'Gastrula: WGCNA cyan module', x = 'Population', y = 'eigenvalues of cyan module')+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'Gastrula', x = 'Population', y = 'eigenvalues of cyan module')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
 cy<-lmer(value~Treatment+ urban+ (1|Experiment), data=mME.gast.joined.cyan) 
 anova(cy) 
 
+##accounting for experiment by plotting the residuals
+cy.exp<-lmer(value~(1|Experiment), data=mME.gast.joined.cyan) 
+res.cy.gast<-resid(cy.exp)
+mME.gast.joined.cyan<-cbind(mME.gast.joined.cyan, res.cy.gast)
+
+#replot data
+WGCNA_cy<-
+  ggplot(mME.gast.joined.cyan, aes(x=urban, y=res.cy.plut, fill=Treatment))+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'B. Gastrula', x = 'Cyan', y = 'eigenvalues of module A (exp-controlled)')+
+  scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
+
+ggsave("WGCNA_gastrula_cy.png",WGCNA_cy, width=20, height=15, units = "cm") 
+
 mME.gast.joined.turq <-mME.gast.joined %>% 
   subset(mME.gast.joined$name=="turquoise")
 
 ggplot(mME.gast.joined.turq, aes(x=urban, y=value, fill=Treatment))+
-  geom_boxplot()+ theme_classic()+
-  labs(title = 'Gastrula: WGCNA turquoise module', x = 'Population', y = 'eigenvalues of turquoise module')+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'Gastrula', x = 'Population', y = 'eigenvalues of turquoise module')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
-tq.g<-lmer(value~Treatment*urban + (1|Experiment), data=mME.gast.joined.turq) 
-anova(tq.g) 
-
+tq.g<-lmer(value~Treatment+urban + (1|Experiment), data=mME.gast.joined.turq) 
+anova(tq.g)  #no sig effect for this module
 
 ####compare with outlier genes####
 DEGs_gast<-read.csv("RNA_data/HE.gast.results.sig.urbtreat.full.genes.csv", header=TRUE) ##outlier genes
@@ -570,6 +604,8 @@ write_delim(module_df.plut,
             file = "plut.WGCNA.gene_modules.txt",
             delim = "\t") #all 34,000 genes and what module they correlate to
 
+sort(table(module_df.plut$colors), decreasing = TRUE)
+unique(module_df.gast$colors)
 ####eigengenes####
 # Get Module Eigengenes per cluster
 MEs0.plut <- moduleEigengenes(vsd.plut.flip, mergedColors.plut)$eigengenes
@@ -633,44 +669,58 @@ mME.plut.joined %>% ggplot(., aes(x=Population, y=name, fill=value)) +
   labs(title = "Module-sample Relationships", y = "Modules", fill="corr")
 
 ####modules of interest####
-###subset specific modules of interest to plot them!
-mME.plut.joined.turq <-mME.plut.joined %>% 
-  subset(mME.plut.joined$name=="turquoise")
-
-WGCNA_plut_turq<-
-  ggplot(mME.plut.joined.turq, aes(x=urban, y=value, fill=Treatment))+
-  geom_boxplot()+ theme_box()+
-  labs(title = 'Pluteus', x = 'Population', y = 'eigenvalues of turquoise module')+
-  scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
-
-ggsave("WGCNA_plut_turq.png",WGCNA_plut_turq, width=20, height=15, units = "cm") 
-
-tq<-lmer(value~Treatment+urban + (1|Experiment), data=mME.plut.joined.turq) 
-anova(tq) 
-
 mME.plut.joined.pturq <-mME.plut.joined %>% 
   subset(mME.plut.joined$name=="paleturquoise")
-ggplot(mME.plut.joined.pturq, aes(x=Population, y=value, fill=Treatment))+
-  geom_boxplot()+ theme_classic()+
-  labs(title = 'Pluteus: WGCNA paleturqoise module', x = 'Population', y = 'eigenvalues of paleturquoise module')+
+
+  ggplot(mME.plut.joined.pturq, aes(x=urban, y=value, fill=Treatment))+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'Pluteus', x = 'Population', y = 'eigenvalues of paleturquoise module')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
 ptq<-lmer(value~Treatment+ urban + (1|Experiment), data=mME.plut.joined.pturq) 
 anova(ptq) 
 
-mME.plut.joined.blue <-mME.plut.joined %>% 
-  subset(mME.plut.joined$name=="blue")
-ggplot(mME.plut.joined.blue, aes(x=urban, y=value, fill=Treatment))+
-  geom_boxplot()+ theme_classic()+
-  labs(title = 'Pluteus: WGCNA blue module', x = 'Population', y = 'eigenvalues of blue module')+
+##accounting for experiment by plotting the residuals
+ptq.exp<-lmer(value~(1|Experiment), data=mME.plut.joined.pturq) 
+res.ptq.plut<-resid(ptq.exp)
+mME.plut.joined.pturq<-cbind(mME.plut.joined.pturq, res.ptq.plut)
+
+#replot data
+WGCNA_plut_paleturq<-
+ggplot(mME.plut.joined.pturq, aes(x=urban, y=res.ptq.plut, fill=Treatment))+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'C. Pluteus', x = 'Pale Turq', y = 'eigenvalues of module A (exp-controlled)')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
 
-mME.plut.joined.yel <-mME.plut.joined %>% 
-  subset(mME.plut.joined$name=="yellow")
-ggplot(mME.plut.joined.yel, aes(x=urban, y=value, fill=Treatment))+
-  geom_boxplot()+ theme_classic()+
-  labs(title = 'Pluteus: WGCNA yellow module', x = 'Population', y = 'eigenvalues of yellow module')+
+ggsave("WGCNA_plut_paleturq.png",WGCNA_plut_paleturq, width=20, height=15, units = "cm") 
+
+
+###subset specific modules of interest to plot them!
+mME.plut.joined.turq <-mME.plut.joined %>% 
+  subset(mME.plut.joined$name=="turquoise")
+
+ggplot(mME.plut.joined.turq, aes(x=urban, y=value, fill=Treatment))+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'Pluteus', x = 'Population', y = 'eigenvalues of turquoise module')+
   scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
+
+tq<-lmer(value~Treatment+urban + (1|Experiment), data=mME.plut.joined.turq) 
+anova(tq) 
+
+##accounting for experiment by plotting the residuals
+tq.exp<-lmer(value~(1|Experiment), data=mME.plut.joined.turq) 
+res.tq.plut<-resid(tq.exp)
+mME.plut.joined.turq.exp<-cbind(mME.plut.joined.turq, res.tq.plut)
+
+#replot data
+WGCNA_plut_turq<-
+ggplot(mME.plut.joined.turq.exp, aes(x=urban, y=res.tq.plut, fill=Treatment))+
+  geom_boxplot()+ theme_box()+
+  labs(title = 'D. Pluteus', x = 'Turquoise', y = 'eigenvalues of module B (exp-controlled)')+
+  scale_fill_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))
+
+ggsave("WGCNA_plut_turq.png",WGCNA_plut_turq, width=20, height=15, units = "cm") 
+
 
 ####compare with outlier genes####
 DEGs_plut<-read.csv("RNA_data/HE.plut.results.sig.urbtreat.full.genes.csv", header=TRUE) ##outlier genes

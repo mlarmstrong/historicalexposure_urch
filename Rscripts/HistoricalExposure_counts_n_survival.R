@@ -51,7 +51,6 @@ ggplot(fullfert.summary, aes(x=Population, y=mean.prop, fill=Treatment)) +
   labs(title = 'Development Success Across Populations', x = 'Population', y = 'Proportion of Developed Embryos')+
   scale_fill_manual(values = c("NP" = "#A13D63", "C" = "#C8E9A0"))
 
-
 #lines per Mate Pair
 #HEMPdev<-
 ggplot(fullfert.summary, aes(x=Treatment, y=mean.prop, color=MatePair)) +

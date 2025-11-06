@@ -1,7 +1,7 @@
 # set wd
 setwd("~/Desktop/urbanurchins")
 # packages
-library(sf)
+libraxry(sf)
 library(dplyr)
 library(ggrepel)
 library(ggspatial)
@@ -48,8 +48,8 @@ ch2map<-
   geom_sf(data = world_crop, fill = 'antiquewhite1') +
   geom_sf(data = states, fill = 'antiquewhite1') +
   geom_point(data = larv, aes(x = Longitude, y = Latitude, color = dev), size = 5) +
-  geom_text_repel(data = larv, aes(x = Longitude, y = Latitude, label = Site),
-                  size = 5, nudge_x = c(-0.5, 0.5), fontface = "bold") +
+ # geom_text_repel(data = larv, aes(x = Longitude, y = Latitude, label = Site),
+#                  size = 5, nudge_x = c(-0.5, 0.5), fontface = "bold") +
   coord_sf(xlim = c(-119, -117.5), ylim = c(33.4, 34), expand = FALSE) +
   scale_color_manual(values = c("urban" = "#5C5649", "nonurban" = "#99D1EC")) +
   theme(
