@@ -214,24 +214,28 @@ plotVarPart(vpb)
 
 ####PCAS####
 pcaData_blast<-
-  plotPCA(vsd.blast, intgroup=c("Treatment", "Population", "urban", "Experiment"),  pcsToUse=5:6, returnData=TRUE) #using ntop=500 top features by variance
+  plotPCA(vsd.blast, intgroup=c("Treatment", "Population", "urban", "Experiment"),  pcsToUse=9:10, returnData=TRUE) #using ntop=500 top features by variance
 percentVar <- round(100 * attr(pcaData_blast, "percentVar"))
 
-
-ggplot(pcaData_blast, aes(x=PC5, y=PC6, shape=Experiment, color=urban)) +
+blastPCA910<- ggplot(pcaData_blast, aes(x=PC9, y=PC10, shape=urban, color=Treatment)) +
   geom_point(size=4) +
-  #stat_ellipse(aes(x = PC1,y=PC2,color=factor(Experiment))) +
+  stat_ellipse(aes(x = PC9,y=PC10, lty=factor(urban),color=factor(Treatment))) +
   #facet_wrap(~Population)+
-  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  xlab(paste0("PC9: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC10: ",percentVar[2],"% variance")) + 
   labs(title= "Blastula")+
-  scale_color_brewer(palette="Set1")+
+  scale_color_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))+
   theme(legend.position="right") + theme_box()
+
+ggsave("pcablast.png",blastPCA910, width=20, height=15, units = "cm")
 
 #linear models
 ##PC5 sig by population (and pop MP) AND experiment
 ## PC1 sig by experiment...
-blast1<-lm(PC5~Population+Treatment+Experiment, data=pcaData_blast) 
+pcaData_blast<-pcaData_blast %>% 
+  mutate(Experiment= recode(Experiment, "E1"="1", "E2"="2", "E3"="3", "E4"="4"))
+pcaData_blast$Experiment<- as.numeric(pcaData_blast$Experiment)
+blast1<-lm(PC10~Treatment+urban+Treatment*urban+(1|Experiment), data=pcaData_blast) 
 anova(blast1)
 
 
@@ -341,17 +345,15 @@ vpg <- sortCols(varPartg)
 plotVarPart(vpg)
 ### PCAS####
 pcaData_gast<-
-  plotPCA(vsd.gast, intgroup=c("Treatment", "Population", "urban", "Pop_MP", "Experiment"),  pcsToUse=1:2, returnData=TRUE) #using ntop=500 top features by variance
+  plotPCA(vsd.gast, intgroup=c("Treatment", "Population", "urban", "Pop_MP", "Experiment"),  pcsToUse=5:6, returnData=TRUE) #using ntop=500 top features by variance
 percentVar <- round(100 * attr(pcaData_gast, "percentVar"))
 
-
 gast.pc2<-
-  ggplot(pcaData_gast, aes(x=PC1, y=PC2, color=Treatment)) +
+  ggplot(pcaData_gast, aes(x=PC2, y=PC3, shape=urban, color=Treatment)) +
   geom_point(size=4) +
-  stat_ellipse(aes(x = PC1, y=PC2, color=factor(Treatment))) +
- # facet_wrap(~Experiment)+
-  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
-  ylab(paste0("PC2: ",percentVar[2],"% variance")) + 
+  stat_ellipse(aes(x = PC2, y=PC3, lty=factor(urban),color=factor(Treatment))) +
+  xlab(paste0("PC2: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC3: ",percentVar[2],"% variance")) + 
   labs(title= "A. Gastrula")+
   scale_color_manual(values = c("NP" = "#C77DFF", "C" = "#C8E9A0"))+
   theme(legend.position="right") + theme_box()
@@ -359,10 +361,9 @@ gast.pc2<-
 ggsave("gastpc2.png",gast.pc2, width=20, height=15, units = "cm") 
 
 gast.pc5<-
-  ggplot(pcaData_gast, aes(x=PC5, y=PC6, color=Treatment)) +
+  ggplot(pcaData_gast, aes(x=PC5, y=PC6, shape=urban, color=Treatment)) +
   geom_point(size=4) +
-  stat_ellipse(aes(x = PC5, y=PC6, color=factor(Treatment))) +
-  # facet_wrap(~Experiment)+
+    stat_ellipse(aes(x = PC5, y=PC6, lty=factor(urban),color=factor(Treatment))) +
   xlab(paste0("PC5: ",percentVar[1],"% variance")) +
   ylab(paste0("PC6: ",percentVar[2],"% variance")) + 
   labs(title= "B. Gastrula")+
@@ -371,9 +372,13 @@ gast.pc5<-
 
 ggsave("gastpc5.png",gast.pc5, width=20, height=15, units = "cm")
 
+pcaData_gast<-pcaData_gast %>% 
+mutate(Experiment= recode(Experiment, "E1"="1", "E2"="2", "E3"="3", "E4"="4"))
+pcaData_gast$Experiment<- as.numeric(pcaData_gast$Experiment)
+
 #linear models
-gast1<-lm(PC2~urban+Treatment+Experiment, data=pcaData_gast) 
-anova(gast1)
+gast<-lm(PC5~Treatment+urban+Treatment*urban + (1|Experiment), data=pcaData_gast) 
+anova(gast)
 
 ####3. Pluteus####
 ###READ IN####
@@ -497,7 +502,8 @@ percentVar <- round(100 * attr(pcaData_plut, "percentVar"))
 
 
 
-plut.pc<-ggplot(pcaData_plut, aes(x=PC3, y=PC4, shape=urban, color=Treatment)) +
+plut.pc<-
+ggplot(pcaData_plut, aes(x=PC3, y=PC4, shape=urban, color=Treatment)) +
   geom_point(size=4) +
   stat_ellipse(aes(x = PC3,y=PC4, lty=factor(urban),color=factor(Treatment))) +
   #facet_wrap(~Population)+
@@ -509,6 +515,10 @@ plut.pc<-ggplot(pcaData_plut, aes(x=PC3, y=PC4, shape=urban, color=Treatment)) +
 
 ggsave("pcaplut.png",plut.pc, width=20, height=15, units = "cm") 
 
+pcaData_plut<-pcaData_plut %>% 
+  mutate(Experiment= recode(Experiment, "E1"="1", "E2"="2", "E3"="3", "E4"="4"))
+pcaData_plut$Experiment<- as.numeric(pcaData_plut$Experiment)
+
 #linear models
-plut1<-lm(PC3~urban+Treatment+Experiment, data=pcaData_plut) 
-anova(plut1)
+plut<-lm(PC10~Treatment+urban+Treatment*urban + (1|Experiment), data=pcaData_plut) 
+anova(plut)

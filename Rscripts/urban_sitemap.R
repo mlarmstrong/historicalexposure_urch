@@ -1,7 +1,7 @@
 # set wd
 setwd("~/Desktop/urbanurchins")
 # packages
-libraxry(sf)
+library(sf)
 library(dplyr)
 library(ggrepel)
 library(ggspatial)
@@ -13,8 +13,11 @@ library(rnaturalearth)
 library(forcats)
 library(lubridate)
 library(tidyr)
+library(terra)
+library(tidyterra)
+library(maptiles)
+
 ##################
-treat.colors<-(c("C"="#A6CEE3" , "NP"="#006D2C"))
 
 # create maps
 #############
@@ -42,7 +45,7 @@ head(states)
 #urban and nonurban larvae sites####
 larv<-read.csv("ch2_sites.csv", header=TRUE, sep=",")
 
-ch2map<-
+#old map
   ggplot(data = world) +
   theme_bw() + 
   geom_sf(data = world_crop, fill = 'antiquewhite1') +
@@ -58,5 +61,43 @@ ch2map<-
     panel.background = element_rect(fill = "aliceblue"),
     legend.position = 'none'
   )
+  
+  
+##fancier map
+  # Define your area as an sf object
+bbox_sf <- st_bbox(c(xmin = -119, ymin = 33.4, xmax = -118.5, ymax = 34),
+                     crs = st_crs(4326)) |> st_as_sfc()
+  
+# Download tiles (no API key needed)
+tiles <- get_tiles(bbox_sf, provider = "OpenStreetMap.HOT",zoom = 10,crop = TRUE)
+#"Esri.NatGeoWorldMap" also good
 
-ggsave("histexp_map.png", ch2map, width=20, height=20, units = "cm")
+ch2map<-
+ggplot() +
+  geom_spatraster_rgb(data = tiles) +   # basemap tiles
+  geom_sf(data = states, fill = NA, color = "white", linewidth = 0.4) +
+  geom_point(data = larv, 
+             aes(x = Longitude, y = Latitude, color = dev), 
+             size = 5) +
+    annotation_scale(             
+    location = "bl",                     
+    width_hint = 0.3,                       
+    text_cex = 0.8,
+    bar_cols = c("black", "white")
+  ) +
+  annotation_north_arrow(                 
+    location = "bl",                        
+    pad_y = unit(0.5, "cm"),                 
+    which_north = "true",
+    style = north_arrow_fancy_orienteering() # options below
+  ) +
+  coord_sf(xlim = c(-118.6, -117.5), ylim = c(33.4, 34), expand = FALSE) +
+  scale_color_manual(values = c("urban" = "#5C5649", "nonurban" = "#99D1EC")) +
+  theme_bw() +
+  theme(
+    plot.title       = element_text(size = 24),
+    panel.grid.major = element_line(color = gray(0.5), linetype = "dashed", size = 0.5),
+    legend.position  = "none"
+  )
+
+ggsave("histexp_map.png", ch2map, width=15, height=10, units = "cm")

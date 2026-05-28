@@ -123,9 +123,8 @@ plut.genes <- plut.genes %>%
 
 ##OVERLAP WITH POPGEN####
 # import LA_GOTerms_copy.csv
-LA.outliers<-read.csv("RNA_data/LA_GOTerms_copy.csv")
+LA.outliers<-read.csv("RNA_data/LA_GOTerms_copy.csv") #LA go terms
 LA.outliers$Transcripts.accession<- sub("\\..*", "", LA.outliers$Transcripts.accession) #get rid of version
-
 #overlap with blast.genes
 over_b <- intersect(blast.genes$X, LA.outliers$Transcripts.accession)
 print(over_b) #XM_030989333
@@ -352,7 +351,6 @@ res <- GenTable(GOdata,classic=resultFisher,topNodes=length(resultFisher@score),
 filt <- res[res$classic<0.05 & res$Significant>2,]
 write.csv(filt,paste("RNA_data/",parname,".GO.WGCNAurbtreat_CC.HE.csv",sep=""))
 
-
 ####WGCNA Gastrula####
 Sg = which(gast.WGCNA$colors=="cyan")
 candgenes.gast <- gast.WGCNA$X[Sg] #
@@ -401,6 +399,46 @@ names(myIG.gast) <- all.genes.gast.w
 topGO_selectFun <- function(x) return(x == 1)  # Select genes labeled as "1"
 
 parname = "Gastrula-tq"
+
+##now separate out by category
+##BP
+GOdata.gast <- new("topGOdata",ontology="BP",allGenes=myIG.gast, nodeSize=10,
+                   annotationFun=annFUN.gene2GO,gene2GO=geneID2GO,
+                   geneSelectionFun=topGO_selectFun)
+test.stat <- new("classicCount",testStatistic=GOFisherTest,name="Fisher test",cutoff=0.01)
+resultFisher <- getSigGroups(GOdata.gast,test.stat)
+res <- GenTable(GOdata.gast,classic=resultFisher,topNodes=length(resultFisher@score),numChar=100)
+filt <- res[res$classic<0.05 & res$Significant>2,]
+write.csv(filt,paste("RNA_data/",parname,".GO.WGCNAurbtreat_BP.HE.csv",sep=""))
+
+##MF
+GOdata <- new("topGOdata",ontology="MF",allGenes=myIG.gast, nodeSize=10,
+              annotationFun=annFUN.gene2GO,gene2GO=geneID2GO,  geneSelectionFun=topGO_selectFun)
+test.stat <- new("classicCount",testStatistic=GOFisherTest,name="Fisher test",cutoff=0.01)
+resultFisher <- getSigGroups(GOdata,test.stat)
+res <- GenTable(GOdata,classic=resultFisher,topNodes=length(resultFisher@score),numChar=100)
+filt <- res[res$classic<0.05 & res$Significant>2,]
+write.csv(filt,paste("RNA_data/",parname,".GO.WGCNAurbtreat_MF.HE.csv",sep=""))
+
+##CC
+GOdata <- new("topGOdata",ontology="CC",allGenes=myIG.gast, nodeSize=10,
+              annotationFun=annFUN.gene2GO,gene2GO=geneID2GO,  geneSelectionFun=topGO_selectFun)
+test.stat <- new("classicCount",testStatistic=GOFisherTest,name="Fisher test",cutoff=0.01)
+resultFisher <- getSigGroups(GOdata,test.stat)
+res <- GenTable(GOdata,classic=resultFisher,topNodes=length(resultFisher@score),numChar=100)
+filt <- res[res$classic<0.05 & res$Significant>2,]
+write.csv(filt,paste("RNA_data/",parname,".GO.WGCNAurbtreat_CC.HE.csv",sep=""))
+
+#####3rd module####
+#coral1
+c1 = which(gast.WGCNA$colors=="coral1")
+candgenes.gast <- gast.WGCNA$X[c1] #
+myIG.gast <-factor(as.numeric(all.genes.gast.w%in%candgenes.gast))
+myIG.gast <- as.numeric(as.character(myIG.gast)) #make sure it is 0s & 1s
+names(myIG.gast) <- all.genes.gast.w
+topGO_selectFun <- function(x) return(x == 1)  # Select genes labeled as "1"
+
+parname = "Gastrula-coral1"
 
 ##now separate out by category
 ##BP
@@ -507,4 +545,4 @@ test.stat <- new("classicCount",testStatistic=GOFisherTest,name="Fisher test",cu
 resultFisher <- getSigGroups(GOdata,test.stat)
 res <- GenTable(GOdata,classic=resultFisher,topNodes=length(resultFisher@score),numChar=100)
 filt <- res[res$classic<0.05 & res$Significant>2,]
-write.csv(filt,paste("RNA_data/",parname,".GO.WGCNAurbtreat_CC.HE.csv",sep=""))
+write.csv(filt,paste("RNA_data/",parname,".GO.WGCNAurbtreat_CC.HE.csv",sep="")
